@@ -1,4 +1,4 @@
-# Playbook de configuração pos formatação do notebook
+# Playbook de instalacao do driver NVIDIA e configuracao inicial do Bumblebee
 
 ---
 - hosts: all
