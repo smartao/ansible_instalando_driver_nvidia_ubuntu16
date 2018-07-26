@@ -1,0 +1,70 @@
+# Playbook de configuração pos formatação do notebook
+
+---
+- hosts: all
+  gather_facts: true
+  
+  vars:
+   nvidiaver: 384
+   nvidiapack: nvidia-384
+
+  tasks:    
+    - name: ADICIONANDO | Repositorio Nvidia
+      raw: apt-add-repository ppa:graphics-drivers/ppa -y 
+   
+    - name: ADICIONANDO | Repositorio Bumblebee
+      raw: apt-add-repository ppa:bumblebee/testing -y
+    
+    - name: INSTALANDO | Driver NVIDIA
+      apt: name={{ item }} state=present
+      with_items:
+        - "{{ nvidiapack }}"
+        - nvidia-prime 
+        - nvidia-settings
+
+    - name: INSTALANDO | Bumblebee
+      apt: name={{ item }} state=present
+      with_items:
+        - bumblebee
+    
+    - name: CONFIGURANDO | Grub para driver NVIDIA
+      replace:
+        path: /etc/default/grub
+        regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="quiet splash nvidia-drm.modeset=1"'
+        replace: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"'
+    
+    - name: ATUALIZANDO | Grub
+      raw: update-grub
+
+    - name: CONFIGURANDO | rc.local
+      lineinfile:
+        path: /etc/rc.local
+        line: "/usr/bin/nvidia-smi -pm 1"
+
+    - name: CONFIGURANDO | Switch para VGA Onboard
+      raw: prime-select intel
+ 
+    - name: CONFIGURANDO | bumblebee.conf P1
+      replace:
+        path: /etc/bumblebee/bumblebee.conf
+        regexp: '^Driver=$'
+        replace: 'Driver=nvidia'
+    
+    - name: CONFIGURANDO | bumblebee.conf P2
+      replace:
+        path: /etc/bumblebee/bumblebee.conf
+        regexp: '^KernelDriver=nvidia$'
+        replace: 'KernelDriver=nvidia-{{nvidiaver}}'
+
+    - name: CONFIGURANDO | bumblebee.conf P3
+      replace:
+        path: /etc/bumblebee/bumblebee.conf
+        regexp: 'nvidia-current:'
+        replace: 'nvidia-current-{{nvidiaver}}:'
+   
+    - name: CONFIGURANDO | bumblebee.conf P4
+      replace:
+        path: /etc/bumblebee/bumblebee.conf
+        regexp: 'nvidia-current/'
+        replace: 'nvidia-current-{{nvidiaver}}/'
+
